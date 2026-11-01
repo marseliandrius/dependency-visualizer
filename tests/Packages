@@ -1,0 +1,18 @@
+Package: demo
+Version: 1.0
+Architecture: amd64
+Depends: legacy
+
+Package: demo
+Version: 2.0
+Architecture: amd64
+Pre-Depends: base (>= 1.0)
+Depends: alpha:any (>= 2.0),
+ beta | gamma
+Description: Package for parser checks
+ Continued description.
+
+Package: nodeps
+Version: 1.0
+Architecture: amd64
+Description: Package without dependencies

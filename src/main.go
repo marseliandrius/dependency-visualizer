@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/marseliandrius/dependency-visualizer/src/apt"
 	"github.com/marseliandrius/dependency-visualizer/src/config"
 )
 
-// main читает параметры запуска и выводит конфигурацию первого этапа.
+const noDependencies = 0
+
+// main читает параметры и выводит прямые зависимости заданной версии пакета.
 func main() {
 	cfg, err := config.Parse(os.Args[1:])
 	if errors.Is(err, flag.ErrHelp) {
@@ -20,11 +23,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("package=%q\n", cfg.Package)
-	fmt.Printf("repository=%q\n", cfg.Repository)
-	fmt.Printf("test=%t\n", cfg.TestMode)
-	fmt.Printf("version=%q\n", cfg.Version)
-	fmt.Printf("output=%q\n", cfg.Output)
-	fmt.Printf("max-depth=%d\n", cfg.MaxDepth)
-	fmt.Printf("filter=%q\n", cfg.Filter)
+	if cfg.TestMode {
+		fmt.Fprintln(os.Stderr, "Ошибка: режим тестового графа будет реализован на этапе 3")
+		os.Exit(1)
+	}
+	dependencies, err := apt.Fetch(cfg.Repository, cfg.Package, cfg.Version)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Ошибка:", err)
+		os.Exit(1)
+	}
+	if len(dependencies) == noDependencies {
+		fmt.Println("Прямых зависимостей нет.")
+		return
+	}
+	for _, dependency := range dependencies {
+		fmt.Println(dependency)
+	}
 }
