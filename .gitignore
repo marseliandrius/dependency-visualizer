@@ -1,0 +1,11 @@
+/dependency-visualizer
+*.exe
+*.test
+*.out
+*.png
+/bin/
+/dist/
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
