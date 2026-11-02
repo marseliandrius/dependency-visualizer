@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/marseliandrius/dependency-visualizer/src/config"
 	"github.com/marseliandrius/dependency-visualizer/src/graph"
@@ -21,7 +20,7 @@ func main() {
 	}
 }
 
-// run строит граф и выводит порядок загрузки: зависимости раньше исходного пакета.
+// run строит граф зависимостей и сохраняет его изображение в PNG.
 func run() error {
 	cfg, err := config.Parse(os.Args[1:])
 	if errors.Is(err, flag.ErrHelp) {
@@ -42,10 +41,9 @@ func run() error {
 		fmt.Println("Граф пуст: исходный пакет исключён фильтром.")
 		return nil
 	}
-	order, err := result.Order(cfg.Package)
-	if err != nil {
+	if err := result.SavePNG(cfg.Output); err != nil {
 		return err
 	}
-	_, err = fmt.Fprintln(os.Stdout, strings.Join(order, " -> "))
+	_, err = fmt.Fprintln(os.Stdout, "Граф сохранён:", cfg.Output)
 	return err
 }
