@@ -1,7 +1,8 @@
-// Package apt получает прямые зависимости из индекса пакетов Ubuntu.
+// Package apt получает сведения о зависимостях из индекса пакетов Ubuntu.
 package apt
 
 import (
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -14,6 +15,15 @@ const requestTimeout = 30 * time.Second
 
 // Fetch загружает индекс Packages или Packages.gz и ищет заданную версию пакета.
 func Fetch(address, name, version string) ([]string, error) {
+	data, err := Download(address)
+	if err != nil {
+		return nil, err
+	}
+	return Find(bytes.NewReader(data), name, version)
+}
+
+// Download загружает и распаковывает индекс один раз для последующего анализа.
+func Download(address string) ([]byte, error) {
 	client := http.Client{Timeout: requestTimeout}
 	response, err := client.Get(address)
 	if err != nil {
@@ -32,5 +42,9 @@ func Fetch(address, name, version string) ([]string, error) {
 		defer archive.Close()
 		reader = archive
 	}
-	return Find(reader, name, version)
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("чтение индекса: %w", err)
+	}
+	return data, nil
 }

@@ -6,37 +6,40 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/marseliandrius/dependency-visualizer/src/apt"
 	"github.com/marseliandrius/dependency-visualizer/src/config"
+	"github.com/marseliandrius/dependency-visualizer/src/graph"
 )
 
-const noDependencies = 0
+const emptyGraph = 0
 
-// main читает параметры и выводит прямые зависимости заданной версии пакета.
+// main запускает построение графа и сообщает об ошибке выполнения.
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "Ошибка:", err)
+		os.Exit(1)
+	}
+}
+
+// run получает настройки, загружает репозиторий и строит граф зависимостей.
+func run() error {
 	cfg, err := config.Parse(os.Args[1:])
 	if errors.Is(err, flag.ErrHelp) {
-		return
+		return nil
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Ошибка:", err)
-		os.Exit(1)
+		return err
 	}
-
-	if cfg.TestMode {
-		fmt.Fprintln(os.Stderr, "Ошибка: режим тестового графа будет реализован на этапе 3")
-		os.Exit(1)
-	}
-	dependencies, err := apt.Fetch(cfg.Repository, cfg.Package, cfg.Version)
+	source, err := loadRepository(cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Ошибка:", err)
-		os.Exit(1)
+		return err
 	}
-	if len(dependencies) == noDependencies {
-		fmt.Println("Прямых зависимостей нет.")
-		return
+	result, err := graph.Build(source, cfg.Package, cfg.MaxDepth, cfg.Filter)
+	if err != nil {
+		return err
 	}
-	for _, dependency := range dependencies {
-		fmt.Println(dependency)
+	if len(result) == emptyGraph {
+		fmt.Println("Граф пуст: исходный пакет исключён фильтром.")
+		return nil
 	}
+	return result.Print(os.Stdout)
 }
